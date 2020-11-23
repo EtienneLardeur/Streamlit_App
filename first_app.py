@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
+import os
 
+DATA_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
+DATA_PATH = os.path.join(DATA_URL, 'tiny.csv')
 
-tiny = pd.read_csv('tiny.csv')
+tiny = pd.read_csv(DATA_PATH)
 
 st.write(tiny)
 
