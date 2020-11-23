@@ -1,18 +1,13 @@
 import streamlit as st
-
 import pandas as pd
 
 # from sklearn import datasets
-
 # from sklearn.ensemble import RandomForestClassifier
 
 Year_List=[2,3,4,5,6,7,8,9,10]
 
-
 st.write("""
-
-# Compound Interest Calculator!
-
+Compound Interest Calculator!
 """)
 
 
