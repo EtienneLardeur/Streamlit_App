@@ -5,18 +5,15 @@ import os
 DATA_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
 DATA_PATH = os.path.join(DATA_URL, 'tiny.csv')
 
+st.write("""
+# Client application : credit scoring
+""")
+st.subheader('Overview - edition mode')
 tiny = pd.read_csv(DATA_PATH)
 
-st.write(tiny.head(1))
+st.write(tiny)
 
-Year_List=[2,3,4,5,6,7,8,9,10]
-
-st.write("""
-tralala why this doesn't work !
-Compound Interest Calculator!
-""")
-
-
+Client_ID_list=tiny['SK_ID_CURR'].tolist()
 
 st.sidebar.header('User Input Values')
 
@@ -24,63 +21,32 @@ st.sidebar.header('User Input Values')
 
 def user_input_features():
 
-    Int_Rate = st.sidebar.slider('Interest Rate in %', 6.0, 42.0, 10.0)
+
+    Client_ID = st.sidebar.selectbox('Please select Client ID', Client_ID_list, 0)
 
     	##st.sidebar.add_rows
 
-    Principal = st.sidebar.text_input('Please input Principal Amount',10000)
-
-    	##st.sidebar.add_rows
-
-    No_Of_Years = st.sidebar.selectbox('Select No Of Years',Year_List, 2)
-
-
-
-    data = {'Int_Rate': Int_Rate,	
-            'Principal': Principal,	
-            'No_Of_Years': No_Of_Years}
+    data = {'Client_ID': Client_ID}
+    
     features = pd.DataFrame(data, index=[0])
     return features
 
-
-
 df = user_input_features()
 
-
-
-st.subheader('User Entered parameters for Rate, Principal amount and No of years is')
+st.subheader('Selected Client ID')
 
 st.write(df)
 
 
-# Compound Interest function
-def compound_int(Principal, Int_Rate, No_Of_Years):
+# Display prediction
+def predict(df):
 
-    comp=1.0
-    for i in range(0, int(No_Of_Years)):
-        comp=comp*(1+Int_Rate/100)
-        #st.write(comp)
-    comp=float(Principal)*(comp-1)
-    comp_text= str("Compound Interest is " + str("%.3f" % comp) )
-    st.write(comp_text)
-    data_1 = {'Computed_Compound_Interest': comp_text}
+    Risk_Flag = tiny['RISK_FLAG'][tiny['SK_ID_CURR'] == df['Client_ID']]
+    return Risk_Flag
 
-    result = pd.DataFrame(data_1, index=[0])
+risk=predict(df)
 
-    return result
+st.subheader('Risk Prediction')
 
-
-
-
-
-
-st.subheader('The calculated compound interest is')
-
-#st.write(result)
-df_1=compound_int(df.Principal, df.Int_Rate, df.No_Of_Years)
-
-
-st.subheader('This is print of data frame')
-
-st.write(df_1)
+st.write(risk)
 
