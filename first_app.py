@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-# from sklearn import datasets
-# from sklearn.ensemble import RandomForestClassifier
+
+tiny = pd.read_csv('tiny.csv')
+
+st.write(tiny)
 
 Year_List=[2,3,4,5,6,7,8,9,10]
 
