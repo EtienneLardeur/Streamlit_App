@@ -7,7 +7,7 @@ DATA_PATH = os.path.join(DATA_URL, 'tiny.csv')
 
 tiny = pd.read_csv(DATA_PATH)
 
-st.write(tiny)
+st.write(tiny.head(1))
 
 Year_List=[2,3,4,5,6,7,8,9,10]
 
