@@ -8,11 +8,11 @@ DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
 # MDL_FILE_PATH = os.path.join(REMOTE_URL, 'model.sav')
 
 tiny = pd.read_csv(DATA_FILE_PATH)
-desc = pd.read_csv(DESC_FILE_PATH)
+desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
 
 # prepare lists
 Client_ID_list = tiny['SK_ID_CURR'].tolist()
-Field_list = desc['Row]'].tolist()
+Field_list = desc['Row'].tolist()
 
 st.write("""
 # Credit scoring of client's applications
@@ -22,7 +22,7 @@ st.subheader('Overview - edition mode')
 
 st.write(tiny)
 
-
+# Sidebar
 
 st.sidebar.header('User Input Values')
 
@@ -49,26 +49,32 @@ def field_description():
 
     Field = st.sidebar.selectbox('Please select a field', Field_list, 0)
 
-    Description = desc[desc['Row'] == Field]['Description']
     
+    Description = desc[desc['Row'] == Field]['Description']
+    pd.options.display.max_colwidth = len(Description)
     return Description
 
 txt_field_desc = field_description()
 
+st.sidebar.text(txt_field_desc)
+
+# Main page
+
 st.subheader('Selected Client ID')
 
-st.write(txt_field_desc)
+st.write(df_client_id)
 
 
+'''
 # Display prediction
-def predict(df_client_id):
+def predict():
 
-    Risk_Flag = tiny['RISK_FLAG'][tiny['SK_ID_CURR'] == df['Client_ID']]
+    Risk_Flag = tiny['RISK_FLAG'][tiny['SK_ID_CURR'] == df_client_id['Client_ID']]
     return Risk_Flag
 
-risk=predict(df)
+risk = predict()
 
 st.subheader('Risk Prediction')
 
 st.write(risk)
-
+'''
