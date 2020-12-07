@@ -9,19 +9,19 @@ import shap
 
 
 REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
-DATA_FILE_PATH = os.path.join(REMOTE_URL, 'tiny.csv')
+DATA_FILE_PATH = os.path.join(REMOTE_URL, 'tiny')
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
 MDL_FILE_PATH = os.path.join(REMOTE_URL, 'finalized_model.sav')
 
-tiny = pd.read_csv(DATA_FILE_PATH)
 desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
+tiny = pickle.load(open(DATA_FILE_PATH, 'rb'))
 
 # prepare model
 model = pickle.load(open(MDL_FILE_PATH, 'rb'))
 pipe = make_pipeline(model)
 
 # prepare lists
-Client_ID_list = tiny['SK_ID_CURR'].tolist()
+Client_ID_list = tiny.index.tolist()
 Field_list = desc['Row'].tolist()
 
 st.write("""
