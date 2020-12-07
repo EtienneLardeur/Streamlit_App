@@ -8,7 +8,6 @@ Source: https://github.com/EtienneLardeur/Streamlit_App
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
-import os
 import pathlib
 import pickle
 import urllib
@@ -35,14 +34,27 @@ model = get_pickle(MODEL_PKL_FILE)
 desc = get_pickle(DESC_PKL_FILE)
 tiny = get_pickle(TINY_PKL_FILE)
 
-REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
-TINY_FILE_PATH = os.path.join(REMOTE_URL, 'tiny.csv')
-DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
-# desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
-tiny = pd.read_csv(TINY_FILE_PATH)
-
-# refactor from here
+# create pipe to call model
 pipe = make_pipeline(model)
+
+# apply threshold to positive probabilities to create labels
+def to_labels(pos_probs, threshold):
+    return (pos_probs >= threshold).astype('int')
+
+# compute initial predictions
+# default threshold
+threshold = 0.1
+
+def compute_predictions(threshold=threshold, data=tiny):
+    tiny_proba = pipe.predict_proba(data)
+    # labels for best threshold
+    tiny_pred = to_labels(tiny_proba, threshold)[:, 1]
+    # check & return failure rate is realistic applied on test set
+    pred_good = (tiny_pred == 0).sum()
+    pred_fail = (tiny_pred == 1).sum()
+    failure_rate = pred_fail / (pred_good + pred_fail)
+    return failure_rate, tiny_proba, tiny_pred
+
 
 # prepare lists
 Client_ID_list = tiny.index.tolist()
@@ -51,24 +63,44 @@ Field_list = desc['Row'].tolist()
 st.write("""
 # Credit scoring of client's applications
 """)
-st.subheader('Overview - edition mode')
+
+# Sidebar ##################################################
+
+st.sidebar.header('Inputs Panel')
+
+def launch_new_session(tiny):
+    if st.sidebar.button('Launch new session'):
+        # initialize results
+        tiny.insert(0, column='RISK_PROBA', value='na')
+        tiny.insert(0, column='RISK_FLAG', value='na')
+    return tiny
+    
+tiny = launch_new_session(tiny)
 
 
-st.write(tiny)
+def threshold_prediction_component():
+    st.sidebar.markdown('Threshold prediction')
+    threshold = st.sidebar.number_input(
+        'Threshold',
+        min_value=0.,
+        value=0.1,
+        max_value=1.)
 
-# Sidebar
+    if st.sidebar.button('Compute predictions'):
+        failure_rate, tiny_proba, tiny_pred = compute_predictions(
+            threshold,
+            tiny)
+        tiny.insert(0, column='RISK_PROBA', value=tiny_pred)
+        tiny.insert(0, column='RISK_FLAG', value=tiny_proba[:, 1])
+        st.sidebar.success(f'New failure rate: {failure_rate}')
 
-st.sidebar.header('User Input Values')
+threshold_prediction_component()
 
-# get (tbc adjustable features) of a given client by ID
 
 def client_input_features():
 
-
     Client_ID = st.sidebar.selectbox('Please select Client ID', Client_ID_list, 0)
-
     data = {'Client_ID': Client_ID}
-    
     features = pd.DataFrame(data, index=[0])
     return features
 
@@ -92,8 +124,21 @@ txt_field_desc = field_description()
 
 st.sidebar.text(txt_field_desc)
 
-# Main page
+# Main page ##################################################
 
+st.subheader('Generate application samples please compute predictions first')
+
+def application_samples_component():
+    ''' display samples
+    '''
+    if st.button('Samples'):
+        st.markdown('predicted __without__ difficulty to repay - sample')
+        st.write(tiny[tiny['RISK_FLAG'] == 0].shape)
+        st.markdown('predicted __with__ difficulty to repay - sample')
+        st.write(tiny[tiny['RISK_FLAG'] == 1].shape)
+
+application_samples_component()
+    
 st.subheader('Selected Client ID')
 
 st.write(df_client_id)
