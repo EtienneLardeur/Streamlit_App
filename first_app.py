@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import base64
 import pickle
 from sklearn.pipeline import make_pipeline
 import lime
@@ -14,9 +15,14 @@ DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
 MDL_FILE_PATH = os.path.join(REMOTE_URL, 'finalized_model.sav')
 
 desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
-tiny = pickle.load(open(DATA_FILE_PATH, 'rb'))
+with open(DATA_FILE_PATH, mode="rb") as df:
+    tiny = pickle.load(df)
 
-# prepare model
+# prepare model - fitted with entire applications data
+def load_model(model):
+    loaded_model = pickle.load(model)
+    return loaded_model
+
 model = pickle.load(open(MDL_FILE_PATH, 'rb'))
 pipe = make_pipeline(model)
 
