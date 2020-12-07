@@ -19,6 +19,8 @@ import shap
 
 
 MODEL_PKL_FILE = "finalized_model.sav"
+DESC_PKL_FILE = 'desc.pkl'
+TINY_PKL_FILE = 'tiny.pkl'
 GITHUB_ROOT = (
     "https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/"
 )
@@ -30,11 +32,13 @@ def get_pickle(file: str):
         return pickle.load(open_file)
 
 model = get_pickle(MODEL_PKL_FILE)
+desc = get_pickle(DESC_PKL_FILE)
+tiny = get_pickle(TINY_PKL_FILE)
 
 REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
 TINY_FILE_PATH = os.path.join(REMOTE_URL, 'tiny.csv')
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
-desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
+# desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
 tiny = pd.read_csv(TINY_FILE_PATH)
 
 # refactor from here
