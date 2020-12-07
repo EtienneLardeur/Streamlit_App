@@ -33,7 +33,7 @@ def get_pickle(file: str):
         return pickle.load(open_file)
 
 # tiny = get_pickle(TINY_PKL_FILE)
-# model = get_model(MODEL_PKL_FILE)
+model = get_model(MODEL_PKL_FILE)
 
 REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
