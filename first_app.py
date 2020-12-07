@@ -1,29 +1,46 @@
+"""Credit Scoring Dashboard App
+
+Author: Etienne Lardeur https://github.com/EtienneLardeur
+Source: https://github.com/EtienneLardeur/Streamlit_App
+
+"""
+
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import os
-import base64
+import pathlib
 import pickle
+import urllib
 from sklearn.pipeline import make_pipeline
 import lime
 from lime.lime_tabular import LimeTabularExplainer
 import shap
 
 
+APP_FILE = "first_app.py"
+MODEL_PKL_FILE = "finalized_model.sav"
+TINY_PKL_FILE = "tiny.pkl"
+# LOCAL_ROOT = pathlib.Path(__file__).parent
+GITHUB_ROOT = (
+    "https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/"
+)
+
+@st.cache
+def get_pickle(file: str):
+    """An instance of an object from the pickle file"""
+    github_url = GITHUB_ROOT + file
+    with urllib.request.urlopen(github_url) as open_file:  # type: ignore
+        return pickle.load(open_file)
+
+tiny = get_pickle(TINY_PKL_FILE)
+model = get_model(MODEL_PKL_FILE)
+
 REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
-DATA_FILE_PATH = os.path.join(REMOTE_URL, 'tiny')
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
-MDL_FILE_PATH = os.path.join(REMOTE_URL, 'finalized_model.sav')
-
 desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
-with open(DATA_FILE_PATH, mode="rb") as df:
-    tiny = pickle.load(df)
 
-# prepare model - fitted with entire applications data
-def load_model(model):
-    loaded_model = pickle.load(model)
-    return loaded_model
-
-model = pickle.load(open(MDL_FILE_PATH, 'rb'))
+# refactor from here
 pipe = make_pipeline(model)
 
 # prepare lists
