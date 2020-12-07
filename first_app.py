@@ -7,7 +7,7 @@ DATA_FILE_PATH = os.path.join(REMOTE_URL, 'tiny.csv')
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
 # MDL_FILE_PATH = os.path.join(REMOTE_URL, 'model.sav')
 
-tiny = pd.read_csv(DATA_FILE_PATH)
+tiny = pd.read_csv(DATA_FILE_PATH, encoding= 'unicode_escape')
 desc = pd.read_csv(DESC_FILE_PATH, encoding= 'unicode_escape')
 
 # prepare lists
