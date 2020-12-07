@@ -26,15 +26,14 @@ GITHUB_ROOT = (
     "https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/"
 )
 
-@st.cache
 def get_pickle(file: str):
     """An instance of an object from the pickle file"""
     github_url = GITHUB_ROOT + file
     with urllib.request.urlopen(github_url) as open_file:  # type: ignore
         return pickle.load(open_file)
 
-tiny = get_pickle(TINY_PKL_FILE)
-model = get_model(MODEL_PKL_FILE)
+# tiny = get_pickle(TINY_PKL_FILE)
+# model = get_model(MODEL_PKL_FILE)
 
 REMOTE_URL = 'https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/'
 DESC_FILE_PATH = os.path.join(REMOTE_URL, 'desc.csv')
