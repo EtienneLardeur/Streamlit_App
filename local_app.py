@@ -99,6 +99,8 @@ st.write("""
 # Sidebar ##################################################
 
 st.sidebar.header('Inputs Panel')
+
+### Sidebar - subsection Failure Rate Control ###
 st.sidebar.subheader('- Failure Rate Control')
 st.sidebar.write('Initial Failure Rate:', failure_rate)
 
@@ -118,6 +120,7 @@ def threshold_prediction_component():
 
 threshold_prediction_component()
 
+### Sidebar - subsection Client selection ###
 st.sidebar.subheader('- Client selection')
 def client_input_features():
     sk_id_curr = st.sidebar.selectbox('Please select Client ID', sk_id_list, 0)
@@ -126,7 +129,9 @@ def client_input_features():
 
 select_sk_row, select_sk_id = client_input_features()
 
-# get description of a field
+### Sidebar - subsection tune ###
+
+### Sidebar - subsection feature description ###
 
 st.sidebar.subheader('- Get full description of a feature')
 
@@ -169,7 +174,7 @@ st.subheader('Generate LIME explainer')
 def lime_explaination(sk_id_curr):
     ''' compute and display explainer
     '''
-    if st.button("Explain Results"):
+    if st.button("Explain Results by LIME"):
         with st.spinner('Calculating...'):
             explainer = LimeTabularExplainer(
                 training_data = tiny.values,
@@ -181,8 +186,34 @@ def lime_explaination(sk_id_curr):
                 pipe.predict_proba,
                 num_features=10)
             # Display explainer HTML object
-            components.html(exp.as_html(), height=800)
-
+            # components.html(exp.as_html(), height=800)
+            # display pyplot figure style
+            st.write(exp.as_pyplot_figure())
 lime_explaination(select_sk_id)
 
 # SHAP section #################################################
+st.subheader('Generate SHAP explainer')
+
+def shap_explaination(sk_id_curr):
+    ''' compute and display explainer
+    '''
+    if st.button("Explain Results by SHAP"):
+        with st.spinner('Calculating...'):
+            # create instance of shap explainer
+            explainerModel = shap.TreeExplainer(model)
+            shap_values_Model = explainerModel.shap_values(tiny.values)
+            # recover index position of sk_id_curr
+            idx = tiny.index.get_loc(sk_id_curr)
+            # 
+            fig = shap.force_plot(
+                explainerModel.expected_value[1],
+                shap_values_Model[1][idx],
+                tiny.iloc[[idx]])
+            fig_html = f"<head>{shap.getjs()}</head><body>{fig.html()}</body>"
+            # Display the summary plot
+            # summary = shap.summary_plot(shap_values_Model[0], tiny, show=True)
+            # st.write(summary)
+            # Display explainer HTML object
+            components.html(fig_html, height=800)
+
+shap_explaination(select_sk_id)
