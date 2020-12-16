@@ -11,14 +11,15 @@ import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pathlib
 import pickle
 import urllib
 from sklearn.neighbors import NearestNeighbors
 from sklearn.pipeline import make_pipeline
-import lime
 from lime.lime_tabular import LimeTabularExplainer
 import shap
+
+# warning on pyplot
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 # path & files to load
 MODEL_SAV_FILE = "model.sav"
@@ -214,9 +215,13 @@ def shap_explaination(sk_id_curr):
                 inputs.iloc[[idx]])
             fig_html = f"<head>{shap.getjs()}</head><body>{fig.html()}</body>"
             # Display the summary plot
-            # summary = shap.summary_plot(shap_values_Model[0], tiny, show=True)
-            # st.write(summary)
+            st.write('SHAP Summary plot - total distribution of application')
+            st.write('__*Red*__ means Class 1: Failure Risk')
+            st.write('__*Blue*__ means Class 0: No Risk')
+            shap.summary_plot(shap_values[1], inputs, show=False)
+            st.pyplot(bbox_inches='tight')
             # Display explainer HTML object
+            st.write('SHAP Force plot for selected Client')
             components.html(fig_html, height=120)
 
 shap_explaination(select_sk_id)
@@ -229,6 +234,9 @@ def lime_explaination(inputs, results, select_sk_id):
     '''
     if st.button("Explain Results by LIME"):
         with st.spinner('Calculating...'):
+            st.write('LIME explaination for the selected Client, first 10 features')
+            st.write('Positive value __*Red*__ means __*Support*__ the Class 1: Failure Risk')
+            st.write('Negative value __*Green*__ means __*Contradict*__ the Class 1: Failure Risk')
             lime_explainer = LimeTabularExplainer(
                 training_data = inputs.values,
                 mode='classification',
@@ -244,9 +252,25 @@ def lime_explaination(inputs, results, select_sk_id):
             df_lime = inputs.filter(
                 inputs.columns[id_cols].tolist())
             sk_id_row = df_lime.loc[[select_sk_id]]
-            # display pyplot figure style
-            st.write(exp.as_pyplot_figure())
+            # compute inputs for plots
+            exp_list= exp.as_list()
+            vals = [x[1] for x in exp_list]
+            names = [x[0] for x in exp_list]
+            vals.reverse()
+            names.reverse()
+            colors = ['red' if x > 0 else 'green' for x in vals]
+            axisgb_colors = ['#fee0d2' if x > 0 else '#c7e9c0' for x in vals]
+            pos = np.arange(len(exp_list)) + .5
+            # create tab plot
+            tab = plt.figure()
+            plt.barh(pos, vals, align='center', color=colors)
+            plt.yticks(pos, names)
+            plt.title('Local explanation for Class 1: Failure Risk')
+            st.pyplot(tab)
             st.write(sk_id_row)
+            st.write('Details of LIME explaination for each features')
+            st.write('You may compare Client value with mean of its Neighbors, Class 1 & Class 0')
+            st.write('Colored lightred / lightgreen foreground is related to Class 1: Failure Risk Support / Contradict')
             # find 20 nearest neighbors to catch anomaly
             nearest_neighbors = NearestNeighbors(
                 n_neighbors=20,
@@ -279,13 +303,14 @@ def lime_explaination(inputs, results, select_sk_id):
                  neighbors_values,
                  client_values],
                 axis=1)
-            colorsList = ('tab:green', 'tab:red', 'olive', 'sienna')
+            colorsList = ('tab:green', 'tab:red', 'tab:cyan', 'tab:blue')
             fig, axs = plt.subplots(10, sharey='row', figsize=(8, 40))
             for i in np.arange(0, 10):
                 axs[i].barh(any_values.T.index,
                 any_values.T.iloc[:, i],
                 color=colorsList)
-                axs[i].set_title(str(any_values.index[i]), )
+                axs[i].set_title(str(any_values.index[i]), fontweight="bold")
+                axs[i].patch.set_facecolor(axisgb_colors[i])
             st.pyplot(fig)
             
 lime_explaination(inputs, results, select_sk_id)
