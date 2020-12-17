@@ -199,13 +199,16 @@ st.subheader('Selected Client')
 st.write(select_sk_row)
 
 # SHAP section #################################################
-st.subheader('Generate SHAP explainer')
+st.subheader('__*demo_only:*__ Generate SHAP explainer')
 
 def shap_explaination(sk_id_curr):
     ''' compute and display explainer
     '''
     if st.button("Explain Results by SHAP"):
         with st.spinner('Calculating...'):
+            st.write('__SH__apley __A__dditive ex__P__lanations provide an overview of how most important features impacts Class prediction')
+            st.write('*__Summary plot__ shows, considering __any application__, the distribution of features values colored by Class prediction*')
+            st.write('*__Force plot__ shows, considering __only the selected application__, how opposite are the features strenghs*')
             # recover index position of sk_id_curr
             idx = inputs.index.get_loc(sk_id_curr)
             # create fig
@@ -215,28 +218,41 @@ def shap_explaination(sk_id_curr):
                 inputs.iloc[[idx]])
             fig_html = f"<head>{shap.getjs()}</head><body>{fig.html()}</body>"
             # Display the summary plot
-            st.write('SHAP Summary plot - total distribution of application')
+            st.write('__ - SHAP Summary plot of Class 1: Failure Risk__')
+            st.write('*Blue means negative impact to Risk while Red means positive impact*')
             st.write('__*Red*__ means Class 1: Failure Risk')
-            st.write('__*Blue*__ means Class 0: No Risk')
+            st.write('__*Blue*__ means opposite')
             shap.summary_plot(shap_values[1], inputs, show=False)
             st.pyplot(bbox_inches='tight')
             # Display explainer HTML object
-            st.write('SHAP Force plot for selected Client')
+            st.write('__ - SHAP Force plot for selected Client__')
+            st.write('*Blue means feature value makes Risk lower while Red means feature value makes Risk higher*')
             components.html(fig_html, height=120)
 
 shap_explaination(select_sk_id)
 
 # Lime section ################################################
 st.subheader('Generate LIME explainer')
+st.write('__ - L__ocal __I__nterpretable __M__odel-agnostic __E__xplanations:')
 
 def lime_explaination(inputs, results, select_sk_id):
     ''' compute and display explainer
     '''
+    st.write('*Please set the number of __features__ you want to analyse (LIME will grab most important first)*')
+    nb_features = st.slider(
+        label='nb of Features to analyse',
+        min_value=7,
+        value=10,
+        max_value=15)
+    st.write('*Please set the number of __similar applications__ you want to compare with (similarity according to most important features)*')
+    nb_neighbors = st.slider(
+        label='nb of Neighbors to consider',
+        min_value=10,
+        value=20,
+        max_value=50)
+    
     if st.button("Explain Results by LIME"):
         with st.spinner('Calculating...'):
-            st.write('LIME explaination for the selected Client, first 10 features')
-            st.write('Positive value __*Red*__ means __*Support*__ the Class 1: Failure Risk')
-            st.write('Negative value __*Green*__ means __*Contradict*__ the Class 1: Failure Risk')
             lime_explainer = LimeTabularExplainer(
                 training_data = inputs.values,
                 mode='classification',
@@ -245,21 +261,25 @@ def lime_explaination(inputs, results, select_sk_id):
             exp = lime_explainer.explain_instance(
                 inputs.loc[select_sk_id].values,
                 pipe.predict_proba,
-                num_features=10)
+                num_features=nb_features)
+            # introduce next step
+            st.write('__ - LIME explaination for the selected Client:__')
+            st.write('*Positive value __Red__ means __Support__ the Class 1: Failure Risk*')
+            st.write('*Negative value __Green__ means __Contradict__ the Class 1: Failure Risk*')
             # Get features_to_show list
             id_cols = [item[0] for item in exp.as_map()[1]]
             # Create inputs restricted to the features_to_show
             df_lime = inputs.filter(
                 inputs.columns[id_cols].tolist())
-            sk_id_row = df_lime.loc[[select_sk_id]]
+            # sk_id_row = df_lime.loc[[select_sk_id]]
             # compute inputs for plots
             exp_list= exp.as_list()
             vals = [x[1] for x in exp_list]
             names = [x[0] for x in exp_list]
+            axisgb_colors = ['#fee0d2' if x > 0 else '#c7e9c0' for x in vals]
             vals.reverse()
             names.reverse()
             colors = ['red' if x > 0 else 'green' for x in vals]
-            axisgb_colors = ['#fee0d2' if x > 0 else '#c7e9c0' for x in vals]
             pos = np.arange(len(exp_list)) + .5
             # create tab plot
             tab = plt.figure()
@@ -267,28 +287,28 @@ def lime_explaination(inputs, results, select_sk_id):
             plt.yticks(pos, names)
             plt.title('Local explanation for Class 1: Failure Risk')
             st.pyplot(tab)
-            st.write(sk_id_row)
-            st.write('Details of LIME explaination for each features')
-            st.write('You may compare Client value with mean of its Neighbors, Class 1 & Class 0')
-            st.write('Colored lightred / lightgreen foreground is related to Class 1: Failure Risk Support / Contradict')
-            # find 20 nearest neighbors to catch anomaly
+            # st.write(sk_id_row)
+            # find nb_neighbors nearest neighbors to catch anomaly
             nearest_neighbors = NearestNeighbors(
-                n_neighbors=20,
+                n_neighbors=nb_neighbors,
                 radius=0.4)
             nearest_neighbors.fit(df_lime)
             neighbors = nearest_neighbors.kneighbors(
                 df_lime.loc[[select_sk_id]],
-                21,
+                nb_neighbors + 1,
                 return_distance=False)[0]
             neighbors = np.delete(neighbors, 0)
             # compute values for neighbors, class0 and class1
+            df_lime['RISK_FLAG'] = results['RISK_FLAG']
             neighbors_values = pd.DataFrame(
                 df_lime.iloc[neighbors].mean(),
                 index=df_lime.columns,
                 columns=['Neighbors_Mean'])
+            st.write('__- Neighbors Risk Flag averaged__',
+                     neighbors_values.Neighbors_Mean.tail(1).values[0])
+            st.write('*Nb. Neighborood __do not__ take Risk prediction values into account*')
             client_values = df_lime.loc[[select_sk_id]].T
             client_values.columns = ['Client_Value']
-            df_lime['RISK_FLAG'] = results['RISK_FLAG']
             class1_values = pd.DataFrame(
                 df_lime[df_lime['RISK_FLAG'] == 1].mean(),
                 index=df_lime.columns,
@@ -300,17 +320,20 @@ def lime_explaination(inputs, results, select_sk_id):
             any_values = pd.concat(
                 [class0_values.iloc[:-1],
                  class1_values.iloc[:-1],
-                 neighbors_values,
+                 neighbors_values.iloc[:-1],
                  client_values],
                 axis=1)
             colorsList = ('tab:green', 'tab:red', 'tab:cyan', 'tab:blue')
-            fig, axs = plt.subplots(10, sharey='row', figsize=(8, 40))
-            for i in np.arange(0, 10):
+            fig, axs = plt.subplots(nb_features, sharey='row', figsize=(8, 4 * nb_features))
+            for i in np.arange(0, nb_features):
                 axs[i].barh(any_values.T.index,
                 any_values.T.iloc[:, i],
                 color=colorsList)
                 axs[i].set_title(str(any_values.index[i]), fontweight="bold")
                 axs[i].patch.set_facecolor(axisgb_colors[i])
+            st.write('__ - Details of LIME explaination for each features: __')
+            st.write('*Nb. You may compare Client value with mean of its Neighbors, Class 1 & Class 0*')
+            st.write('*Colored lightred / lightgreen foreground is related to Class 1: Failure Risk Support / Contradict*')
             st.pyplot(fig)
             
 lime_explaination(inputs, results, select_sk_id)
