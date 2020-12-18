@@ -10,4 +10,4 @@ streamlit run local_app.py
 even if the app appears at localhost, but any inputs are from the Github repo.
 
 
-![build_dashboard](build_dashboard.png)
+![build_dashboard](build_dashboard.PNG)
