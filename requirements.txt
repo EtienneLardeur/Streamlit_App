@@ -5,3 +5,4 @@ lime==0.2.0.1
 shap==0.37.0
 numpy==1.19.4
 scikit_learn==0.23.2
+lightgbm==3.1.0
