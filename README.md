@@ -2,11 +2,9 @@
 
 Student's project - openclassrooms Credit Scoring of Client's application
 
+either you run app hosted by streamlit : 
+https://share.streamlit.io/etiennelardeur/streamlit_app/main/local_app.py
 
-waiting to be deployed, to run from remote github's url :
-streamlit run https://raw.githubusercontent.com/EtienneLardeur/Streamlit_App/main/[tbd]_app.py
-
-from now, launch local_app.py from its local folder:
+or download & run local :
 streamlit run local_app.py
-
-the app appears  localhost, but any inputs are from the Github repo.
+even if the app appears at localhost, but any inputs are from the Github repo.
