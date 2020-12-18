@@ -132,7 +132,7 @@ st.write("""
 st.sidebar.header('Inputs Panel')
 
 ### Sidebar - subsection Failure Rate Control ###
-st.sidebar.subheader('- Failure Rate Control')
+st.sidebar.subheader('- *Supervisor Only* Failure Rate Control')
 st.sidebar.write('Initial Failure Rate', failure_rate)
 
 def threshold_prediction_component():
@@ -160,12 +160,12 @@ def client_input_features():
 select_sk_row, select_sk_id = client_input_features()
 
 ### Sidebar - subsection tune ###
-st.sidebar.subheader('- Tune Application')
+st.sidebar.subheader('- *tbd* Tune Application')
 
 
 ### Sidebar - subsection feature description ###
 
-st.sidebar.subheader('- Get full description of a feature')
+st.sidebar.subheader('- *tbc* Get full description of a feature')
 
 def field_description():
 
@@ -181,7 +181,7 @@ st.sidebar.text(txt_field_desc)
 
 # Main page ##################################################
 
-st.subheader('__*demo_only:*__ Generate applications sample')
+st.subheader('- __*Demo only*__ Generate applications sample')
 
 def application_samples_component():
     ''' display samples
@@ -199,7 +199,7 @@ st.subheader('Selected Client')
 st.write(select_sk_row)
 
 # SHAP section #################################################
-st.subheader('__*demo_only:*__ Generate SHAP explainer')
+st.subheader(' __*Experiment:*__ Generate SHAP explainer')
 
 def shap_explaination(sk_id_curr):
     ''' compute and display explainer
@@ -207,32 +207,53 @@ def shap_explaination(sk_id_curr):
     if st.button("Explain Results by SHAP"):
         with st.spinner('Calculating...'):
             st.write('__SH__apley __A__dditive ex__P__lanations provide an overview of how most important features impacts Class prediction')
-            st.write('*__Summary plot__ shows, considering __any application__, the distribution of features values colored by Class prediction*')
-            st.write('*__Force plot__ shows, considering __only the selected application__, how opposite are the features strenghs*')
+            # st.write('*__Summary plot__ shows, considering __any application__, the distribution of features values colored by Class prediction*')
+            st.write('*__Force plot__ shows, __depending on the ground data selected__, how opposite are the features strenghs*')
+            st.write('*Green means feature value makes Default Risk lower while Red means feature value makes Default Risk higher*')
             # recover index position of sk_id_curr
             idx = inputs.index.get_loc(sk_id_curr)
-            # create fig
-            fig = shap.force_plot(
+            # create individual fig
+            ind_fig = shap.force_plot(
                 shap_explainer.expected_value[1],
                 shap_values[1][idx],
-                inputs.iloc[[idx]])
-            fig_html = f"<head>{shap.getjs()}</head><body>{fig.html()}</body>"
+                inputs.iloc[[idx]], plot_cmap="PkYg")
+            ind_fig_html = f"<head>{shap.getjs()}</head><body>{ind_fig.html()}</body>"
+            # create collective fig
+            col_fig = shap.force_plot(
+                shap_explainer.expected_value[1],
+                shap_values[1][0,:],
+                inputs.iloc[0,:], plot_cmap="PkYg")
+            col_fig_html = f"<head>{shap.getjs()}</head><body>{col_fig.html()}</body>"
+            # create 
+            feat_fig = shap.force_plot(
+                shap_explainer.expected_value[1],
+                shap_values[1][:500,:],
+                inputs.iloc[:500,:], plot_cmap="PkYg")
+            feat_fig_html = f"<head>{shap.getjs()}</head><body>{feat_fig.html()}</body>"
             # Display the summary plot
-            st.write('__ - SHAP Summary plot of Class 1: Failure Risk__')
-            st.write('*Blue means negative impact to Risk while Red means positive impact*')
-            st.write('__*Red*__ means Class 1: Failure Risk')
-            st.write('__*Blue*__ means opposite')
-            shap.summary_plot(shap_values[1], inputs, show=False)
-            st.pyplot(bbox_inches='tight')
-            # Display explainer HTML object
-            st.write('__ - SHAP Force plot for selected Client__')
-            st.write('*Blue means feature value makes Risk lower while Red means feature value makes Risk higher*')
-            components.html(fig_html, height=120)
+            # st.write('__ - SHAP Summary plot of Class 1: Failure Risk__')
+            # st.write('*Blue means negative impact to Risk while Red means positive impact*')
+            # st.write('__*Red*__ means Class 1: Failure Risk')
+            # st.write('__*Blue*__ means opposite')
+            # shap.summary_plot(shap_values[1], inputs, show=False)
+            # st.pyplot(bbox_inches='tight')
+            # Display explainer HTML object col_fig
+            st.write('__ - SHAP Force plot considering entire new Applications data (test)__')
+            # st.write('*Green means feature value makes Risk lower while Red means feature value makes Risk higher*')
+            components.html(col_fig_html, height=120)
+            # Display explainer HTML object ind_fig
+            st.write('__ - SHAP Force plot for the selected Application__')
+            # st.write('*Green means feature value makes Risk lower while Red means feature value makes Risk higher*')
+            components.html(ind_fig_html, height=120)
+            # Display explainer HTML object feat_fig
+            st.write('__ - SHAP Force plot to provide feature analysis along a sample of Applications (here 10% of test set)__')
+            # st.write('*Green means feature value makes Risk lower while Red means feature value makes Risk higher*')
+            components.html(feat_fig_html, height=350)
 
 shap_explaination(select_sk_id)
 
 # Lime section ################################################
-st.subheader('Generate LIME explainer')
+st.subheader('__*Actionable:*__ Generate LIME explainer')
 st.write('__ - L__ocal __I__nterpretable __M__odel-agnostic __E__xplanations:')
 
 def lime_explaination(inputs, results, select_sk_id):
@@ -240,13 +261,13 @@ def lime_explaination(inputs, results, select_sk_id):
     '''
     st.write('*Please set the number of __features__ you want to analyse (LIME will grab most important first)*')
     nb_features = st.slider(
-        label='nb of Features to analyse',
+        label='Number of Features to analyse',
         min_value=7,
         value=10,
         max_value=15)
     st.write('*Please set the number of __similar applications__ you want to compare with (similarity according to most important features)*')
     nb_neighbors = st.slider(
-        label='nb of Neighbors to consider',
+        label='Number of similar applications to consider',
         min_value=10,
         value=20,
         max_value=50)
